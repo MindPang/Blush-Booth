@@ -1,0 +1,14 @@
+# Core (app + all classical experiments + the CNNs trained from scratch: D3, P4, L4, L5)
+torch>=2.1
+numpy>=1.24
+opencv-python>=4.8
+scikit-learn>=1.2
+flask>=2.3          # browser UI (ui/server.py)
+
+# Only needed for the "beyond class" pretrained models
+torchvision>=0.16                    # L6 MobileNetV2 (ImageNet weights)
+ultralytics>=8.1                     # D4 YOLOv8n (COCO weights)
+segmentation-models-pytorch>=0.3     # P5 U-Net with ResNet18 encoder (ImageNet weights)
+
+# Only for tests/
+pytest>=7

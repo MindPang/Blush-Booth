@@ -1,0 +1,12 @@
+
+===== 2026-11-23 03:05:38  C:\Users\User\miniconda3\envs\blushbooth\python.exe F:\Revised Blush Booth\experiments\face_parser\deep_learning\p5_unet_resnet18.py --full --variant unet_resnet18 --seed 0 --epochs 8 --workers 4 --device auto --save F:\Revised Blush Booth\model\parser\P5_unet_resnet18_full.pt --csv F:\Revised Blush Booth\model\parser\results.csv --lapa f:\Blush Booth\LaPa --backgrounds f:\Blush Booth\backgrounds
+U-Net ResNet18: 14.33 M parameters, device cuda
+  epoch 1/8  train loss 0.8363  (391 s)
+  epoch 2/8  train loss 0.3029  (555 s)
+  epoch 3/8  train loss 0.2712  (720 s)
+  epoch 4/8  train loss 0.2475  (884 s)
+  epoch 5/8  train loss 0.2282  (1049 s)
+  epoch 6/8  train loss 0.2120  (1213 s)
+  epoch 7/8  train loss 0.1983  (1378 s)
+  epoch 8/8  train loss 0.1913  (1542 s)
+[P5 unet_resnet18] epochs=8 batch=16 lr=0.001 loss=CE+Dice -> miou_11=0.8468, lips_iou=0.7789, hair_iou=0.9201, skin_iou=0.9432, 5.42 ms/image  (row added to F:\Revised Blush Booth\model\parser\results.csv)

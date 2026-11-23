@@ -1,0 +1,10 @@
+exp_id,approach,source,classifier,settings,train_images,seed,metric_1,metric_2,metric_3,metric_4,train_time_s,ms_per_image,notes
+L1,classical,baseline (no learning),mean_shape,crop=160,2000,0,22.7225,22.1225,25.7758,0.8620,6.1544,0.0020,mean of the train shapes in the crop
+L2,classical,lecture (Harris corners),plain,points=4 eye corners window=12%,2000,0,,20.9292,,,6.1360,0.2107,4 eye corners only; L1 mean shape on the same 4 points = 22.142
+L2,classical,lecture (Harris corners),weighted,points=4 eye corners window=12%,2000,0,,20.3680,,,6.1360,0.2628,4 eye corners only; L1 mean shape on the same 4 points = 22.142
+L3,classical,Lab 8 (regression),kNN,features=gray32+LBP pca=50,2000,0,17.7759,16.7339,19.7881,0.7520,6.4598,10.0154,5-fold CV NME 17.893
+L3,classical,Lab 8 (regression),RandomForest,features=gray32+LBP pca=50,2000,0,16.1305,15.1678,17.6844,0.6480,8.9025,16.0065,5-fold CV NME 16.176
+L3,classical,Lab 8 (regression),Ridge,features=gray32+LBP pca=50,2000,0,13.4559,12.8341,14.7363,0.4980,6.5264,0.4117,5-fold CV NME 13.596
+L4,deep learning,"new small CNN, from scratch",cnn_regression,epochs=4 batch=16 lr=0.001 loss=L1,2000,0,11.0415,9.6977,10.4606,0.4300,26.5216,1.3223,cuda; train loss 0.496 > 0.309 > 0.228 > 0.190
+L5,deep learning,"existing model, from scratch",heatmap,epochs=4 batch=16 lr=0.001 loss=L1,2000,0,6.0154,4.4825,5.7848,0.0660,49.5101,4.2767,cuda; train loss 0.390 > 0.150 > 0.108 > 0.087
+L6,deep learning,"pretrained ImageNet (torchvision), fine-tuned",mobilenetv2,epochs=4 batch=16 lr=0.001 loss=L1,2000,0,8.8166,7.3635,8.8916,0.1900,50.8071,4.8430,cuda; train loss 0.738 > 0.270 > 0.196 > 0.170

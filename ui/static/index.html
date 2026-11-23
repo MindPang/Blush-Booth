@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blush Booth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='3' y='3' width='26' height='26' rx='6' fill='%23C2456B'/><rect x='9' y='9' width='14' height='14' rx='3' fill='%23F6EFE6'/></svg>">
+</head>
+<body>
+  <!-- small line icons, used with <svg><use href="#i-..."/></svg> -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+      <symbol id="i-photo" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4 4 3 3-2 4 3"/></symbol>
+      <symbol id="i-compare" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1.5"/><path d="M12 3v18"/></symbol>
+      <symbol id="i-snap" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2-5"/><path d="M5 4v4h4"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></symbol>
+      <symbol id="i-erase" viewBox="0 0 24 24"><path d="M4 16l8-8 6 6-5 5H8z"/><path d="M13 19h7"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></symbol>
+      <symbol id="i-arrows" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app">
+    <header class="top">
+      <h1>Blush Booth</h1>
+      <span class="sub">virtual makeup</span>
+    </header>
+
+    <main class="layout">
+      <section class="viewer">
+        <div class="frame" id="frame">
+          <div class="stage" id="stage">
+            <canvas id="before"></canvas>
+            <canvas id="after"></canvas>
+            <div class="divider" id="divider" hidden><span class="handle"><svg><use href="#i-arrows"/></svg></span></div>
+            <span class="corner left" id="tagBefore" hidden>Before</span>
+            <span class="corner right" id="tagAfter" hidden>After</span>
+            <span class="note" id="noFace" hidden>No face found</span>
+            <div class="flash" id="flash"></div>
+          </div>
+
+          <div class="empty" id="empty">
+            <p class="empty-title">Start with your camera or a photo.</p>
+            <div class="empty-btns">
+              <button class="btn primary" id="startCam"><svg><use href="#i-camera"/></svg>Use camera</button>
+              <label class="btn"><svg><use href="#i-photo"/></svg>Choose photo<input type="file" accept="image/*" id="filePick" hidden></label>
+            </div>
+            <p class="empty-hint">or drop a photo here</p>
+          </div>
+          <div class="drop" id="drop">Drop to open</div>
+        </div>
+
+        <div class="bar">
+          <div class="seg" role="group" aria-label="Source">
+            <button class="seg-btn" id="modeCam"><svg><use href="#i-camera"/></svg>Camera</button>
+            <label class="seg-btn" id="modePhoto"><svg><use href="#i-photo"/></svg>Photo<input type="file" accept="image/*" id="filePick2" hidden></label>
+          </div>
+          <button class="btn" id="compareBtn" disabled title="Before / after (C)"><svg><use href="#i-compare"/></svg>Compare</button>
+          <button class="btn primary" id="snapBtn" disabled title="Save picture (Space)"><svg><use href="#i-snap"/></svg>Snap</button>
+          <span class="fps" id="fps"></span>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="looks" id="looksRow">
+          <label class="look-pick">
+            <span class="label">Look</span>
+            <select id="lookSelect"></select>
+          </label>
+          <div class="look-actions">
+            <button class="icon-btn" id="resetBtn" title="Undo changes to this look"><svg><use href="#i-reset"/></svg><span>Reset</span></button>
+            <button class="icon-btn" id="saveLookBtn" title="Save as a new look"><svg><use href="#i-save"/></svg><span>Save</span></button>
+            <button class="icon-btn" id="deleteLookBtn" title="Delete this look"><svg><use href="#i-trash"/></svg><span>Delete</span></button>
+            <button class="icon-btn" id="bareBtn" title="Switch every layer off"><svg><use href="#i-erase"/></svg><span>Clear</span></button>
+          </div>
+        </div>
+        <form class="save-form" id="saveForm" hidden>
+          <input type="text" id="lookName" maxlength="30" placeholder="Name this look" autocomplete="off">
+          <button class="btn primary" type="submit">Save</button>
+          <button class="btn" type="button" id="saveCancel">Cancel</button>
+        </form>
+
+        <nav class="tabs" id="tabs" role="tablist"></nav>
+        <div class="sections" id="sections"></div>
+
+        <details class="settings">
+          <summary>Settings</summary>
+          <label class="toggle-row">
+            <span>U-Net face masks<small>Off uses simple shapes from the face points.</small></span>
+            <input type="checkbox" id="unetToggle"><span class="toggle" aria-hidden="true"></span>
+          </label>
+          <label class="toggle-row">
+            <span>Face box<small>Green detection box.</small></span>
+            <input type="checkbox" id="showBox"><span class="toggle" aria-hidden="true"></span>
+          </label>
+          <label class="toggle-row">
+            <span>Landmark dots<small>The 106 face points.</small></span>
+            <input type="checkbox" id="showDots"><span class="toggle" aria-hidden="true"></span>
+          </label>
+          <label class="toggle-row">
+            <span>Class labels<small>The 11 face-part areas with names.</small></span>
+            <input type="checkbox" id="showLabel"><span class="toggle" aria-hidden="true"></span>
+          </label>
+          <p class="keys"><kbd>Space</kbd> snap &nbsp; <kbd>C</kbd> compare &nbsp; <kbd>1</kbd>–<kbd>4</kbd> tabs</p>
+        </details>
+      </aside>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <video id="video" playsinline muted hidden></video>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blush Booth: experiment report (full training)</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 9.6pt; line-height: 1.38; color: #1d1d1f; }
+  h1 { font-size: 17pt; margin: 0 0 4px; }
+  h2 { font-size: 12.5pt; margin: 16px 0 6px; break-after: avoid; }
+  p { margin: 4px 0 6px; }
+  .sub { color: #444; margin-bottom: 10px; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 4px; break-inside: avoid; font-size: 8.9pt; }
+  th { background: #2f3a4f; color: #fff; text-align: left; padding: 4px 6px; font-weight: bold; }
+  td { border: 1px solid #c9ced8; padding: 3.5px 6px; vertical-align: top; }
+  tr.win td { background: #e3f1dc; font-weight: bold; }
+  td.n, th.n { text-align: right; }
+  .note { font-size: 8.3pt; color: #555; margin: 2px 0 10px; }
+  ul { margin: 4px 0 6px 18px; padding: 0; }
+  li { margin: 2px 0; }
+  code { font-family: Consolas, monospace; font-size: 8.6pt; background: #f1f2f5; padding: 0 3px; }
+  .box { border-left: 3px solid #2f3a4f; background: #f5f6f8; padding: 6px 10px; margin: 6px 0 8px; }
+</style>
+</head>
+<body>
+
+<h1>Blush Booth: face detection, landmark and parser experiments</h1>
+<p class="sub">15 short-run experiments, selection of one model per task, full training of the three winners on LaPa,
+integration of the fully trained models into the app, and a single final evaluation on the held-out test split.
+Model choices were made on the validation split only. Revised 23 Nov 2026.</p>
+
+<h2>1. Summary</h2>
+<table>
+  <tr><th>Task</th><th>Selected model</th><th>Validation (full training)</th><th>Test (2,000 photos, run once)</th><th class="n">Speed, RTX 3060</th></tr>
+  <tr><td>Face detection</td><td>D4 YOLOv8n (COCO-pretrained, fine-tuned)</td><td>recall 0.974, mean IoU 0.848, false alarms 0.2% (thr 0.4)</td><td>recall 0.972, mean IoU 0.849, false alarms 1.2%</td><td class="n">6.4 ms/frame</td></tr>
+  <tr><td>Face landmarks (106 pts)</td><td>L5 heatmap + soft-argmax (from scratch)</td><td>NME 1.95%, failure rate 0.4%</td><td>NME 1.45%, failure rate 0.45%</td><td class="n">4.2 ms/crop</td></tr>
+  <tr><td>Face parsing (11 classes)</td><td>P5 U-Net + ResNet18 (ImageNet-pretrained, fine-tuned)</td><td>mIoU 0.847, lips 0.779, hair 0.920, skin 0.943</td><td>mIoU 0.851, lips 0.793, hair 0.916, skin 0.946</td><td class="n">5.4 ms/crop</td></tr>
+</table>
+<p>Full training moved all three models well past their short-run scores: detection recall 0.954 to 0.974
+(false alarms 1.8% to 0.2%), landmark NME 6.02% to 1.95%, parser mIoU 0.788 to 0.847.
+The app (<code>makeup_app.py</code>) and the browser server (<code>ui/server.py</code>) now load these fully
+trained models by default (section 6). On the held-out test split the scores stay close to validation, and the
+complete pipeline finds the face in 98.2% of test photos (section 7). Speed: the per-model times in this report's
+tables were measured on the RTX 3060 PC used for training; the app timings in section 8 were measured on an RTX 3050
+laptop GPU, where short-run and fully trained weights were timed side by side (about 105 ms per frame, 9.5 fps, for
+both).</p>
+
+<h2>2. Data and protocol</h2>
+<p><b>Data.</b> LaPa: 18,168 train, 2,000 val and 2,000 test photos with 106 landmarks and 11 parsing classes.
+Detection scenes are photos placed on 640x480 canvases, plus empty scenes built from 100 face-free background photos.</p>
+<p><b>Short runs.</b> Every experiment uses the same 2,000 train images (fixed list, seed 0) and the same 500 val
+images. All CNNs use the same optimiser and schedule: AdamW (weight decay 1e-4), OneCycle learning rate, batch 16,
+lr 1e-3, 4 epochs. One seed per experiment.</p>
+<p><b>Hardware.</b> All training and every per-model time in sections 1 and 3 to 5 (ms/frame, ms/crop): NVIDIA RTX
+3060 12 GB PC. The test-set evaluation (section 7) and all app timings (section 8): NVIDIA RTX 3050 6 GB Laptop GPU.
+Times from the two machines are never compared with each other.</p>
+<p><b>Selection rule (fixed before the runs).</b> Detection: highest recall with false alarms at most 3% and at most
+15 ms per frame. Parser: highest mIoU with lips IoU within 0.02 of the best and at most 30 ms per crop.
+Landmark: lowest NME with at most 15 ms per crop.</p>
+<p><b>Full training.</b> The winner's own script is rerun on all 18,168 train images with the same optimiser and
+batch size, for 8 epochs (parser) or 20 epochs (landmark, detection).</p>
+<p><b>Metrics.</b> Detection: recall (IoU above 0.5 and score above the threshold), mean IoU, false-alarm rate on
+empty scenes. Landmarks: NME as a percentage of the outer-eye-corner distance over all 106 points; failure = NME
+above 10%. Parser: mean IoU over 11 classes (background included).</p>
+
+<h2>3. Short-run results (2,000 train images, 4 epochs for CNNs)</h2>
+<p><b>Face detection</b> (500 val scenes + 500 empty scenes). For each approach the row shown is the threshold with
+the highest recall among those with false alarms at most 3%; if none qualifies, the lowest false-alarm row is shown
+and marked *.</p>
+<table>
+  <tr><th>ID</th><th>Approach</th><th class="n">Threshold</th><th class="n">Recall</th><th class="n">Mean IoU</th><th class="n">False alarms</th><th class="n">ms/frame (RTX 3060)</th></tr>
+  <tr><td>D1</td><td>Template matching (NCC)</td><td class="n">0.7</td><td class="n">0.034</td><td class="n">0.102</td><td class="n">19.8%*</td><td class="n">4.1</td></tr>
+  <tr><td>D1</td><td>Template matching (SSD)</td><td class="n">0.96</td><td class="n">0.000</td><td class="n">0.019</td><td class="n">0.0%</td><td class="n">5.7</td></tr>
+  <tr><td>D2</td><td>Sliding window, kNN</td><td class="n">0.9</td><td class="n">0.188</td><td class="n">0.299</td><td class="n">7.4%*</td><td class="n">90.9</td></tr>
+  <tr><td>D2</td><td>Sliding window, SVM</td><td class="n">0.9</td><td class="n">0.336</td><td class="n">0.387</td><td class="n">8.0%*</td><td class="n">63.7</td></tr>
+  <tr><td>D2</td><td>Sliding window, Random Forest</td><td class="n">0.7</td><td class="n">0.210</td><td class="n">0.362</td><td class="n">0.2%</td><td class="n">62.6</td></tr>
+  <tr><td>D3</td><td>CenterNet from scratch</td><td class="n">0.4</td><td class="n">0.630</td><td class="n">0.662</td><td class="n">0.4%</td><td class="n">3.8</td></tr>
+  <tr class="win"><td>D4</td><td>YOLOv8n pretrained + fine-tuned</td><td class="n">0.4</td><td class="n">0.954</td><td class="n">0.801</td><td class="n">1.8%</td><td class="n">6.6</td></tr>
+</table>
+<p class="note">Among the classical detectors, only D2 Random Forest (recall 0.210) and one all-reject SSD setting
+(recall 0.0) met the 3% false-alarm limit. D3 reaches recall 0.778 at threshold 0.3, but with 6.0% false alarms,
+so that setting fails the rule.</p>
+
+<p><b>Face landmarks</b> (500 val crops, 160x160). NME in % of the outer-eye-corner distance, lower is better.</p>
+<table>
+  <tr><th>ID</th><th>Approach</th><th class="n">NME all</th><th class="n">NME eyes</th><th class="n">NME lips</th><th class="n">Failure rate</th><th class="n">ms/crop (RTX 3060)</th></tr>
+  <tr><td>L1</td><td>Mean shape (no learning)</td><td class="n">22.72</td><td class="n">22.12</td><td class="n">25.78</td><td class="n">86.2%</td><td class="n">0.0</td></tr>
+  <tr><td>L2</td><td>Harris corners (4 eye corners)</td><td class="n">-</td><td class="n">20.93</td><td class="n">-</td><td class="n">-</td><td class="n">0.2</td></tr>
+  <tr><td>L2</td><td>Harris corners, weighted (4 pts)</td><td class="n">-</td><td class="n">20.37</td><td class="n">-</td><td class="n">-</td><td class="n">0.3</td></tr>
+  <tr><td>L3</td><td>Regression, kNN</td><td class="n">17.78</td><td class="n">16.73</td><td class="n">19.79</td><td class="n">75.2%</td><td class="n">10.0</td></tr>
+  <tr><td>L3</td><td>Regression, Random Forest</td><td class="n">16.13</td><td class="n">15.17</td><td class="n">17.68</td><td class="n">64.8%</td><td class="n">16.0</td></tr>
+  <tr><td>L3</td><td>Regression, Ridge</td><td class="n">13.46</td><td class="n">12.83</td><td class="n">14.74</td><td class="n">49.8%</td><td class="n">0.4</td></tr>
+  <tr><td>L4</td><td>Small CNN, direct regression</td><td class="n">11.04</td><td class="n">9.70</td><td class="n">10.46</td><td class="n">43.0%</td><td class="n">1.3</td></tr>
+  <tr class="win"><td>L5</td><td>Heatmap + soft-argmax (from scratch)</td><td class="n">6.02</td><td class="n">4.48</td><td class="n">5.78</td><td class="n">6.6%</td><td class="n">4.3</td></tr>
+  <tr><td>L6</td><td>MobileNetV2 pretrained + fine-tuned</td><td class="n">8.82</td><td class="n">7.36</td><td class="n">8.89</td><td class="n">19.0%</td><td class="n">4.8</td></tr>
+</table>
+<p class="note">L2 locates only the 4 eye corners, so it has no all-point NME. The from-scratch heatmap model beat the
+pretrained MobileNetV2 (6.0% vs 8.8%) and all classical regressors.</p>
+
+<p><b>Face parsing</b> (500 val crops, 256x256). mIoU over 11 classes; higher is better.</p>
+<table>
+  <tr><th>ID</th><th>Approach</th><th class="n">mIoU</th><th class="n">Lips IoU</th><th class="n">Hair IoU</th><th class="n">Skin IoU</th><th class="n">ms/crop (RTX 3060)</th></tr>
+  <tr><td>P1</td><td>Colour rules</td><td class="n">0.119</td><td class="n">0.227</td><td class="n">0.243</td><td class="n">0.385</td><td class="n">1.6</td></tr>
+  <tr><td>P1</td><td>Colour rules + morphology</td><td class="n">0.120</td><td class="n">0.228</td><td class="n">0.230</td><td class="n">0.392</td><td class="n">1.5</td></tr>
+  <tr><td>P2</td><td>K-means, K=6</td><td class="n">0.102</td><td class="n">0.000</td><td class="n">0.397</td><td class="n">0.357</td><td class="n">3.2</td></tr>
+  <tr><td>P2</td><td>K-means, K=8</td><td class="n">0.101</td><td class="n">0.000</td><td class="n">0.396</td><td class="n">0.349</td><td class="n">3.2</td></tr>
+  <tr><td>P2</td><td>K-means, K=11</td><td class="n">0.113</td><td class="n">0.000</td><td class="n">0.404</td><td class="n">0.413</td><td class="n">3.3</td></tr>
+  <tr><td>P3</td><td>Patch classifier, Random Forest</td><td class="n">0.199</td><td class="n">0.069</td><td class="n">0.547</td><td class="n">0.719</td><td class="n">26.2</td></tr>
+  <tr><td>P3</td><td>Patch classifier, kNN</td><td class="n">0.183</td><td class="n">0.067</td><td class="n">0.475</td><td class="n">0.612</td><td class="n">31.5</td></tr>
+  <tr><td>P3</td><td>Patch classifier, Decision Tree</td><td class="n">0.241</td><td class="n">0.216</td><td class="n">0.476</td><td class="n">0.693</td><td class="n">7.5</td></tr>
+  <tr><td>P4</td><td>U-Net from scratch</td><td class="n">0.370</td><td class="n">0.448</td><td class="n">0.643</td><td class="n">0.806</td><td class="n">9.7</td></tr>
+  <tr class="win"><td>P5</td><td>U-Net + ResNet18 pretrained + fine-tuned</td><td class="n">0.788</td><td class="n">0.724</td><td class="n">0.871</td><td class="n">0.917</td><td class="n">5.5</td></tr>
+</table>
+<p class="note">Classical parsers could not separate small classes (brows, eyes, nose, mouth) and scored a very low
+IoU on them. The pretrained U-Net more than doubled the from-scratch U-Net's mIoU in the same four epochs.</p>
+
+<h2>4. Models selected</h2>
+<p>Detection: D4 YOLOv8n at threshold 0.4 (recall 0.954, false alarms 1.8%, 6.6 ms). Parser: P5 U-Net + ResNet18
+(mIoU 0.788, 5.5 ms). Landmark: L5 heatmap model (NME 6.0%, 4.3 ms); times measured on the RTX 3060 PC. All three met their speed limits by a wide
+margin, so speed did not change any decision. The short-run selection is saved in <code>best_models.json</code>;
+the fully trained weights are listed in <code>model/best_models.json</code>.</p>
+
+<h2>5. Full training of the selected models (all 18,168 train images)</h2>
+<table>
+  <tr><th>Task / model</th><th class="n">Epochs</th><th class="n">Train time</th><th>Val result (full training)</th><th>Short run for reference</th><th class="n">ms (RTX 3060)</th></tr>
+  <tr><td>Detection, D4 YOLOv8n</td><td class="n">20</td><td class="n">30 min</td><td>recall 0.974, IoU 0.848, false alarms 0.2%</td><td>recall 0.954, IoU 0.801, 1.8%</td><td class="n">6.4</td></tr>
+  <tr><td>Landmark, L5 heatmap</td><td class="n">20</td><td class="n">18 min</td><td>NME 1.95% (eyes 1.39, lips 2.10), failure 0.4%</td><td>NME 6.02%, failure 6.6%</td><td class="n">4.2</td></tr>
+  <tr><td>Parser, P5 U-Net + ResNet18</td><td class="n">8</td><td class="n">26 min</td><td>mIoU 0.847 (lips 0.779, hair 0.920, skin 0.943)</td><td>mIoU 0.788, lips 0.724</td><td class="n">5.4</td></tr>
+</table>
+<p class="note">Train time is the training loop only (YOLO's image-export step excluded). Settings were identical to
+the short runs apart from the number of images and epochs. Hardware: NVIDIA RTX 3060 12 GB, Windows 11,
+PyTorch 2.11 (CUDA 12.8). All three runs are logged as finished in <code>model/training_runs.csv</code>.</p>
+
+<p><b>Detector threshold after full training.</b> Recall and IoU stay the same from threshold 0.3 to 0.5; only false
+alarms change (0.8% at 0.3, 0.2% at 0.4, 0.0% at 0.5). The app keeps the selected threshold of 0.4.</p>
+<p><b>Parser per-class IoU (full training, val).</b></p>
+<table>
+  <tr><th>Background</th><th>Skin</th><th>L brow</th><th>R brow</th><th>L eye</th><th>R eye</th><th>Nose</th><th>Upper lip</th><th>Mouth</th><th>Lower lip</th><th>Hair</th></tr>
+  <tr><td>0.96</td><td>0.94</td><td>0.80</td><td>0.80</td><td>0.82</td><td>0.82</td><td>0.93</td><td>0.75</td><td>0.81</td><td>0.78</td><td>0.92</td></tr>
+</table>
+<p class="note">The weakest classes are the thin ones (lips, brows), which matter most for lipstick and brow layers;
+every class is at 0.75 or above.</p>
+<p><b>Training loss.</b> Landmark L1 loss fell from 0.203 (epoch 1) to 0.021 (epoch 20); it had nearly levelled off
+(0.022 to 0.021 over the last five epochs). Parser loss fell from 0.836 to 0.191 over 8 epochs.</p>
+
+<h2>6. Using the fully trained models in the app</h2>
+<p>After full training, the app and the browser server were still loading the <b>short-run</b> weights: both
+defaulted to <code>best_models.json</code>, while <code>full_train.py</code> writes the fully trained weights to
+<code>model/best_models.json</code>. This has been fixed:</p>
+<ul>
+  <li><code>facekit/pipeline.py</code>: new <code>default_config()</code> returns <code>model/best_models.json</code> when
+    it exists, otherwise <code>best_models.json</code>.</li>
+  <li><code>makeup_app.py</code> and <code>ui/server.py</code>: <code>--config</code> now defaults to that choice. At start-up
+    both print the model file and the stage of each model, e.g.
+    <code>models: model/best_models.json (detector full, landmark full, parser full)</code>.
+    <code>--config best_models.json</code> still selects the short-run models.</li>
+  <li><code>experiments/test_once.py</code>: the one-time test-split evaluation now uses the fully trained models too.</li>
+  <li><code>model/best_models.json</code>: its <code>val_metrics</code> still showed the short-run scores; they now show the
+    full-training scores above, and the short-run scores are kept under <code>short_run_val_metrics</code>.</li>
+</ul>
+<div class="box"><b>Checks.</b> Photo mode loads all three full models and applies makeup correctly to a face photo, and
+correctly reports "no face" on a face-free background. The browser server loads the full models and returns a made-up
+frame with a face detected (<code>POST /api/frame</code>). The project test suite passes (33 tests).</div>
+
+<h2>7. Test-set results (held-out, evaluated once)</h2>
+<p>After every choice was fixed (models, epochs, detector threshold 0.4) and the app was switched to the fully trained
+weights, <code>experiments/test_once.py</code> evaluated each model once on the full LaPa test split: 2,000 photos for
+landmarks and parsing, and 2,000 face scenes plus 2,000 empty scenes for detection (empty scenes from the 15 test
+background photos, which were not used in training or validation). The same crops, scenes and metrics as the validation
+evaluation were used. Results are logged in <code>records/evaluation_runs.csv</code>.</p>
+<table>
+  <tr><th>Model</th><th>Metric</th><th class="n">Validation (500)</th><th class="n">Test (2,000)</th></tr>
+  <tr><td rowspan="3">D4 YOLOv8n detector (thr 0.4)</td><td>Recall</td><td class="n">0.974</td><td class="n">0.972</td></tr>
+  <tr><td>Mean IoU</td><td class="n">0.848</td><td class="n">0.849</td></tr>
+  <tr><td>False alarms (empty scenes)</td><td class="n">0.2%</td><td class="n">1.2%</td></tr>
+  <tr><td rowspan="4">L5 heatmap landmarks</td><td>NME all 106 points</td><td class="n">1.95%</td><td class="n">1.45%</td></tr>
+  <tr><td>NME eyes</td><td class="n">1.39%</td><td class="n">1.04%</td></tr>
+  <tr><td>NME lips</td><td class="n">2.10%</td><td class="n">1.36%</td></tr>
+  <tr><td>Failure rate (NME &gt; 10%)</td><td class="n">0.4%</td><td class="n">0.45%</td></tr>
+  <tr><td rowspan="4">P5 U-Net + ResNet18 parser</td><td>mIoU (11 classes)</td><td class="n">0.847</td><td class="n">0.851</td></tr>
+  <tr><td>Lips IoU</td><td class="n">0.779</td><td class="n">0.793</td></tr>
+  <tr><td>Hair IoU</td><td class="n">0.920</td><td class="n">0.916</td></tr>
+  <tr><td>Skin IoU</td><td class="n">0.943</td><td class="n">0.946</td></tr>
+</table>
+<p class="note">Detection recall, IoU and the parser scores are within 0.015 of validation. The detector's false-alarm
+rate rose from 0.2% to 1.2% (24 of 2,000 empty test scenes), still inside the 3% limit of the selection rule; the empty
+test scenes are cut from only 15 background photos, so a few difficult backgrounds weigh heavily. Landmark NME is
+lower on test than on validation (1.45% vs 1.95%) with the same failure rate, so the validation figure is the more
+conservative one.</p>
+
+<p><b>Complete pipeline on the test photos</b> (<code>--task end2end</code>): the same code the app runs (detector, then
+landmarks from the detected box, then parser) on each of the 2,000 original test photos, with no ground-truth help.</p>
+<table>
+  <tr><th>Face found (IoU &gt; 0.5 with the true face box)</th><th>Landmark NME on found faces</th><th>Parser mIoU on found faces</th></tr>
+  <tr><td>98.2% (1,963 of 2,000)</td><td>1.41%</td><td>0.842</td></tr>
+</table>
+<p class="note">The end-to-end numbers stay close to the per-model numbers, so errors do not pile up much when the models
+are chained: landmarks taken from the detector's box are about as accurate as from the fixed evaluation crop.</p>
+
+<h2>8. Live-camera speed: short-run vs fully trained weights on the same GPU</h2>
+<p>Both weight sets were timed on the <b>same machine</b> (NVIDIA RTX 3050 6 GB Laptop GPU, PyTorch 2.12, CUDA 13.0)
+with the same script, which calls the same functions as the webcam loop: 40 LaPa photos letterboxed to 640x480,
+default look 'soft pink' (all layers on, including hair), GPU-synchronised timings, 400 frames with tracking (each
+photo held for 10 frames). The runs alternated short, full, short, full; each value is the mean of the two runs per
+weight set (the two runs agreed within 10%). A face was found in all 40 photos in every run.</p>
+<table>
+  <tr><th>Stage (RTX 3050 Laptop)</th><th class="n">Short-run weights</th><th class="n">Fully trained weights</th></tr>
+  <tr><td>Detector (YOLOv8n)</td><td class="n">8.2 ms</td><td class="n">8.9 ms</td></tr>
+  <tr><td>Landmarks, new face / tracking</td><td class="n">16.2 ms / 5.4 ms</td><td class="n">17.3 ms / 5.6 ms</td></tr>
+  <tr><td>Parser + mapping labels back to the frame</td><td class="n">14.6 ms</td><td class="n">15.0 ms</td></tr>
+  <tr><td>Analyse step for a new face (all models, incl. hair pass)</td><td class="n">59.1 ms</td><td class="n">62.3 ms</td></tr>
+  <tr><td>Makeup drawing (paint step)</td><td class="n">39.6 ms</td><td class="n">39.7 ms</td></tr>
+  <tr><td><b>Complete app frame with tracking</b></td><td class="n"><b>105.3 ms (9.5 fps)</b></td><td class="n"><b>105.8 ms (9.5 fps)</b></td></tr>
+  <tr><td>95th percentile frame time</td><td class="n">115.2 ms</td><td class="n">116.8 ms</td></tr>
+</table>
+<p class="note">Full training does not change the size of the networks, and on the same GPU the two weight sets run at
+the same speed (differences of about 1 ms per stage are within run-to-run noise). The networks take only a small part
+of the frame; most of it goes to CPU work around them: makeup blending, colour conversions, the skin-smoothing filter
+and the second parser pass for hair. A smooth live feed needs about 25 fps (under 40 ms per frame), so the app code,
+not the models, is what needs optimising. The earlier report's speed table (short-run weights, 100 ms per frame) was
+measured on the RTX 3060 PC and is not comparable with these numbers.</p>
+
+<h2>9. Limitations</h2>
+<ul>
+  <li>Model selection used the validation split; the test split was evaluated once, at the end, and was not used for any
+    decision. Detection test scenes are synthetic, and their empty scenes come from only 15 background photos.</li>
+  <li>One random seed per experiment, so small differences (a few hundredths of mIoU or recall) are within run-to-run noise.</li>
+  <li>The short runs use 2,000 training images and 4 epochs; approaches that need more training were disadvantaged,
+    especially the from-scratch CNNs. Only the winners were fully trained.</li>
+  <li>The detector (COCO) and parser (ImageNet) start from pretrained weights; the landmark winner trained from scratch.
+    If a project rule requires training from random weights, the best from-scratch alternatives that pass the selection
+    rules are D3 CenterNet (short-run recall 0.630 at 0.4% false alarms) and P4 U-Net (short-run mIoU 0.370).</li>
+  <li>Detection scenes are synthetic (face photo pasted on a canvas); real webcam frames may behave differently.</li>
+  <li>Two machines were used: per-model times in sections 1 and 3 to 5 come from the RTX 3060 training PC; app timings in
+    section 8 come from the RTX 3050 laptop. Section 8 was measured on photos, not a live camera, and its 40 photos are
+    training images (fine for timing, not used for any accuracy figure).</li>
+</ul>
+
+</body>
+</html>

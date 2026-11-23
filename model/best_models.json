@@ -1,0 +1,83 @@
+{
+  "detector": {
+    "exp_id": "D4",
+    "classifier": "yolov8n",
+    "settings": "thr=0.4 epochs=20 imgsz=256 lr=0.001",
+    "seed": 0,
+    "module": "experiments.face_detection.deep_learning.d4_yolov8n",
+    "weights": "model/detection/D4_yolov8n_full.pt",
+    "stage": "full",
+    "val_metrics": {
+      "recall": 0.974,
+      "mean_iou": 0.8475,
+      "false_alarm_rate": 0.002,
+      "unused": null
+    },
+    "ms_per_image": 6.4085,
+    "threshold": 0.4,
+    "full_epochs": 20,
+    "short_run_val_metrics": {
+      "recall": 0.954,
+      "mean_iou": 0.8011,
+      "false_alarm_rate": 0.018,
+      "unused": null
+    },
+    "short_run_settings": "thr=0.4 epochs=4 imgsz=256 lr=0.001",
+    "short_run_ms_per_image": 6.579,
+    "train_images": 18168
+  },
+  "parser": {
+    "exp_id": "P5",
+    "classifier": "unet_resnet18",
+    "settings": "epochs=8 batch=16 lr=0.001 loss=CE+Dice",
+    "seed": 0,
+    "module": "experiments.face_parser.deep_learning.p5_unet_resnet18",
+    "weights": "model/parser/P5_unet_resnet18_full.pt",
+    "stage": "full",
+    "val_metrics": {
+      "miou_11": 0.8468,
+      "lips_iou": 0.7789,
+      "hair_iou": 0.9201,
+      "skin_iou": 0.9432
+    },
+    "ms_per_image": 5.4224,
+    "crop_size": 256,
+    "full_epochs": 8,
+    "short_run_val_metrics": {
+      "miou_11": 0.7883,
+      "lips_iou": 0.7238,
+      "hair_iou": 0.8706,
+      "skin_iou": 0.9166
+    },
+    "short_run_settings": "epochs=4 batch=16 lr=0.001 loss=CE+Dice",
+    "short_run_ms_per_image": 5.5291,
+    "train_images": 18168
+  },
+  "landmark": {
+    "exp_id": "L5",
+    "classifier": "heatmap",
+    "settings": "epochs=20 batch=16 lr=0.001 loss=L1",
+    "seed": 0,
+    "module": "experiments.face_landmark.deep_learning.l5_heatmap_softargmax",
+    "weights": "model/landmark/L5_heatmap_full.pt",
+    "stage": "full",
+    "val_metrics": {
+      "nme_106_%": 1.9541,
+      "nme_eyes_%": 1.3894,
+      "nme_lips_%": 2.0971,
+      "failure_rate": 0.004
+    },
+    "ms_per_image": 4.2255,
+    "crop_size": 160,
+    "full_epochs": 20,
+    "short_run_val_metrics": {
+      "nme_106_%": 6.0154,
+      "nme_eyes_%": 4.4825,
+      "nme_lips_%": 5.7848,
+      "failure_rate": 0.066
+    },
+    "short_run_settings": "epochs=4 batch=16 lr=0.001 loss=L1",
+    "short_run_ms_per_image": 4.2767,
+    "train_images": 18168
+  }
+}

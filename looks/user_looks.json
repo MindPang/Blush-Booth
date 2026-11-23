@@ -1,0 +1,148 @@
+{
+  "looks": {
+    "uncle roger": {
+      "lips": {
+        "k": 0.55,
+        "blur": 7,
+        "style": "ombre",
+        "gloss": 0.5,
+        "color": "#E1646E"
+      },
+      "blush": {
+        "k": 0.14,
+        "blur": 41,
+        "style": "high",
+        "color": "#F0A0B4"
+      },
+      "shadow": {
+        "k": 0.25,
+        "blur": 21,
+        "style": "lid+lower",
+        "shimmer": 0.25,
+        "color": "#EBA096"
+      },
+      "liner": {
+        "k": 0.35,
+        "blur": 1,
+        "style": "line",
+        "color": "#50321E"
+      },
+      "lashes": {
+        "k": 0.55,
+        "blur": 1,
+        "style": "natural",
+        "color": "#372319"
+      },
+      "skin": {
+        "k": 0.7,
+        "blur": 15,
+        "smooth": 0.7,
+        "color": "#EBCDBE"
+      },
+      "lens": {
+        "k": 0.2,
+        "blur": 3,
+        "color": "#BE823C"
+      },
+      "brows": {
+        "k": 0.25,
+        "blur": 5,
+        "color": "#6E503C"
+      },
+      "teeth": {
+        "k": 0.55,
+        "blur": 3,
+        "color": "#F5F5F5"
+      },
+      "hair": {
+        "k": 0.29,
+        "blur": 11,
+        "color": "#784628"
+      },
+      "mustache": {
+        "k": 0.9,
+        "blur": 3,
+        "style": "handlebar",
+        "color": "#3C281E"
+      },
+      "beard": {
+        "k": 0.0,
+        "blur": 3,
+        "style": "full",
+        "color": "#3C281E"
+      }
+    },
+    "Apply all": {
+      "lips": {
+        "k": 0.55,
+        "blur": 7,
+        "style": "ombre",
+        "gloss": 0.5,
+        "color": "#BE1E28"
+      },
+      "blush": {
+        "k": 0.24,
+        "blur": 41,
+        "style": "high",
+        "color": "#E67896"
+      },
+      "shadow": {
+        "k": 0.54,
+        "blur": 21,
+        "style": "lid+lower",
+        "shimmer": 0.54,
+        "color": "#E18CAA"
+      },
+      "liner": {
+        "k": 0.68,
+        "blur": 1,
+        "style": "wing",
+        "color": "#141419"
+      },
+      "lashes": {
+        "k": 0.55,
+        "blur": 1,
+        "style": "volume",
+        "color": "#372319"
+      },
+      "skin": {
+        "k": 1.0,
+        "blur": 15,
+        "smooth": 1.0,
+        "color": "#EBCDBE"
+      },
+      "lens": {
+        "k": 0.2,
+        "blur": 3,
+        "color": "#508CBE"
+      },
+      "brows": {
+        "k": 0.7,
+        "blur": 5,
+        "color": "#511F2C"
+      },
+      "teeth": {
+        "k": 0.55,
+        "blur": 3,
+        "color": "#FFFFFF"
+      },
+      "hair": {
+        "k": 0.29,
+        "blur": 11,
+        "color": "#781E3C"
+      },
+      "mustache": {
+        "k": 0.9,
+        "blur": 3,
+        "style": "handlebar",
+        "color": "#3C281E"
+      },
+      "beard": {
+        "k": 0.85,
+        "blur": 3,
+        "style": "goatee",
+        "color": "#3C281E"
+      }
+    }
+  }
+}

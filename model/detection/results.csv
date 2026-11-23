@@ -1,0 +1,4 @@
+exp_id,approach,source,classifier,settings,train_images,seed,metric_1,metric_2,metric_3,metric_4,train_time_s,ms_per_image,notes
+D4,deep learning,"pretrained COCO (ultralytics), fine-tuned",yolov8n,thr=0.3 epochs=20 imgsz=256 lr=0.001,18168,0,0.9740,0.8475,0.0080,,1772.7096,6.4085,FULL TRAIN; cuda
+D4,deep learning,"pretrained COCO (ultralytics), fine-tuned",yolov8n,thr=0.4 epochs=20 imgsz=256 lr=0.001,18168,0,0.9740,0.8475,0.0020,,1772.7096,6.4085,FULL TRAIN; cuda
+D4,deep learning,"pretrained COCO (ultralytics), fine-tuned",yolov8n,thr=0.5 epochs=20 imgsz=256 lr=0.001,18168,0,0.9740,0.8475,0.0000,,1772.7096,6.4085,FULL TRAIN; cuda

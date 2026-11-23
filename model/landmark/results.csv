@@ -1,0 +1,2 @@
+exp_id,approach,source,classifier,settings,train_images,seed,metric_1,metric_2,metric_3,metric_4,train_time_s,ms_per_image,notes
+L5,deep learning,"existing model, from scratch",heatmap,epochs=20 batch=16 lr=0.001 loss=L1,18168,0,1.9541,1.3894,2.0971,0.0040,1100.6404,4.2255,FULL TRAIN; cuda; train loss 0.203 > 0.066 > 0.048 > 0.039 > 0.035 > 0.032 > 0.034 > 0.030 > 0.028 > 0.027 > 0.030 > 0.026 > 0.024 > 0.024 > 0.023 > 0.022 > 0.022 > 0.021 > 0.021 > 0.021

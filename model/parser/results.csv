@@ -1,0 +1,2 @@
+exp_id,approach,source,classifier,settings,train_images,seed,metric_1,metric_2,metric_3,metric_4,train_time_s,ms_per_image,notes
+P5,deep learning,"pretrained ImageNet encoder (smp), fine-tuned",unet_resnet18,epochs=8 batch=16 lr=0.001 loss=CE+Dice,18168,0,0.8468,0.7789,0.9201,0.9432,1542.2793,5.4224,FULL TRAIN; cuda; train loss 0.836 > 0.303 > 0.271 > 0.247 > 0.228 > 0.212 > 0.198 > 0.191; per-class IoU: bg=0.96 skin=0.94 lbrow=0.80 rbrow=0.80 leye=0.82 reye=0.82 nose=0.93 ulip=0.75 mouth=0.81 llip=0.78 hair=0.92

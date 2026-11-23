@@ -1,0 +1,26 @@
+exp_id,approach,source,classifier,settings,train_images,seed,metric_1,metric_2,metric_3,metric_4,train_time_s,ms_per_image,notes
+D1,classical,lecture IP07 / Lab 7,ncc,thr=0.3 scales=5 template=32x40,2000,0,0.1000,0.1024,1.0000,,19.1522,4.0923,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ncc,thr=0.4 scales=5 template=32x40,2000,0,0.1000,0.1024,1.0000,,19.1522,4.0923,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ncc,thr=0.5 scales=5 template=32x40,2000,0,0.1000,0.1024,0.9940,,19.1522,4.0923,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ncc,thr=0.6 scales=5 template=32x40,2000,0,0.0900,0.1024,0.6740,,19.1522,4.0923,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ncc,thr=0.7 scales=5 template=32x40,2000,0,0.0340,0.1024,0.1980,,19.1522,4.0923,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ssd,thr=0.8 scales=5 template=32x40,2000,0,0.0100,0.0190,1.0000,,19.1522,5.6760,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ssd,thr=0.85 scales=5 template=32x40,2000,0,0.0100,0.0190,1.0000,,19.1522,5.6760,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ssd,thr=0.9 scales=5 template=32x40,2000,0,0.0100,0.0190,0.9600,,19.1522,5.6760,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ssd,thr=0.93 scales=5 template=32x40,2000,0,0.0080,0.0190,0.6280,,19.1522,5.6760,"average gray face, no learning"
+D1,classical,lecture IP07 / Lab 7,ssd,thr=0.96 scales=5 template=32x40,2000,0,0.0000,0.0190,0.0000,,19.1522,5.6760,"average gray face, no learning"
+D2,classical,Lab 8,kNN,thr=0.5 scales=3 features=HSV+LBP+edges,2000,0,0.2300,0.2990,0.6500,,113.8732,90.9384,5-fold CV window accuracy 0.952; 16689 train windows
+D2,classical,Lab 8,kNN,thr=0.7 scales=3 features=HSV+LBP+edges,2000,0,0.2260,0.2990,0.4600,,113.8732,90.9384,5-fold CV window accuracy 0.952; 16689 train windows
+D2,classical,Lab 8,kNN,thr=0.9 scales=3 features=HSV+LBP+edges,2000,0,0.1880,0.2990,0.0740,,113.8732,90.9384,5-fold CV window accuracy 0.952; 16689 train windows
+D2,classical,Lab 8,SVM,thr=0.5 scales=3 features=HSV+LBP+edges,2000,0,0.3580,0.3872,0.3880,,114.4161,63.7178,5-fold CV window accuracy 0.970; 6000 train windows
+D2,classical,Lab 8,SVM,thr=0.7 scales=3 features=HSV+LBP+edges,2000,0,0.3580,0.3872,0.2420,,114.4161,63.7178,5-fold CV window accuracy 0.970; 6000 train windows
+D2,classical,Lab 8,SVM,thr=0.9 scales=3 features=HSV+LBP+edges,2000,0,0.3360,0.3872,0.0800,,114.4161,63.7178,5-fold CV window accuracy 0.970; 6000 train windows
+D2,classical,Lab 8,RandomForest,thr=0.5 scales=3 features=HSV+LBP+edges,2000,0,0.2980,0.3624,0.0940,,114.1629,62.6040,5-fold CV window accuracy 0.950; 16689 train windows
+D2,classical,Lab 8,RandomForest,thr=0.7 scales=3 features=HSV+LBP+edges,2000,0,0.2100,0.3624,0.0020,,114.1629,62.6040,5-fold CV window accuracy 0.950; 16689 train windows
+D2,classical,Lab 8,RandomForest,thr=0.9 scales=3 features=HSV+LBP+edges,2000,0,0.0460,0.3624,0.0020,,114.1629,62.6040,5-fold CV window accuracy 0.950; 16689 train windows
+D3,deep learning,"existing model, from scratch",centernet,thr=0.3 epochs=4 batch=16 lr=0.001,2000,0,0.7780,0.6618,0.0600,,36.7483,3.8225,cuda; train loss 4.435 > 2.459 > 1.888 > 1.656
+D3,deep learning,"existing model, from scratch",centernet,thr=0.4 epochs=4 batch=16 lr=0.001,2000,0,0.6300,0.6618,0.0040,,36.7483,3.8225,cuda; train loss 4.435 > 2.459 > 1.888 > 1.656
+D3,deep learning,"existing model, from scratch",centernet,thr=0.5 epochs=4 batch=16 lr=0.001,2000,0,0.3600,0.6618,0.0000,,36.7483,3.8225,cuda; train loss 4.435 > 2.459 > 1.888 > 1.656
+D4,deep learning,"pretrained COCO (ultralytics), fine-tuned",yolov8n,thr=0.3 epochs=4 imgsz=256 lr=0.001,2000,0,0.9540,0.8011,0.0340,,143.7202,6.5790,cuda
+D4,deep learning,"pretrained COCO (ultralytics), fine-tuned",yolov8n,thr=0.4 epochs=4 imgsz=256 lr=0.001,2000,0,0.9540,0.8011,0.0180,,143.7202,6.5790,cuda
+D4,deep learning,"pretrained COCO (ultralytics), fine-tuned",yolov8n,thr=0.5 epochs=4 imgsz=256 lr=0.001,2000,0,0.9520,0.8011,0.0080,,143.7202,6.5790,cuda

@@ -1,0 +1,5 @@
+time,task,exp_id,classifier,weights,split,n_images,metrics,ms_per_image,notes
+2026-11-23 14:01:12,detection,D4,yolov8n,model/detection/D4_yolov8n_full.pt,test,4000,recall=0.9715; mean_iou=0.8485; false_alarm_rate=0.0120,7.65,
+2026-11-23 14:01:33,landmark,L5,heatmap,model/landmark/L5_heatmap_full.pt,test,2000,nme_106_%=1.4480; nme_eyes_%=1.0382; nme_lips_%=1.3564; failure_rate=0.0045,4.24,
+2026-11-23 14:02:43,parser,P5,unet_resnet18,model/parser/P5_unet_resnet18_full.pt,test,2000,miou_11=0.8513; lips_iou=0.7931; hair_iou=0.9162; skin_iou=0.9456,6.70,
+2026-11-23 14:05:06,end2end,,,model/best_models.json,test,2000,found=0.9815; nme_found_%=1.4105; miou_11=0.8416,68.96,

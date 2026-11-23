@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "exp_id": "D4",
+    "classifier": "yolov8n",
+    "settings": "thr=0.4 epochs=4 imgsz=256 lr=0.001",
+    "seed": 0,
+    "module": "experiments.face_detection.deep_learning.d4_yolov8n",
+    "weights": "experiments/face_detection/checkpoints/D4_yolov8n_s0.pt",
+    "stage": "short run (2,000 train images) - run experiments/full_train.py next",
+    "val_metrics": {
+      "recall": 0.954,
+      "mean_iou": 0.8011,
+      "false_alarm_rate": 0.018,
+      "unused": null
+    },
+    "ms_per_image": 6.579,
+    "threshold": 0.4
+  },
+  "parser": {
+    "exp_id": "P5",
+    "classifier": "unet_resnet18",
+    "settings": "epochs=4 batch=16 lr=0.001 loss=CE+Dice",
+    "seed": 0,
+    "module": "experiments.face_parser.deep_learning.p5_unet_resnet18",
+    "weights": "experiments/face_parser/checkpoints/P5_unet_resnet18_s0.pt",
+    "stage": "short run (2,000 train images) - run experiments/full_train.py next",
+    "val_metrics": {
+      "miou_11": 0.7883,
+      "lips_iou": 0.7238,
+      "hair_iou": 0.8706,
+      "skin_iou": 0.9166
+    },
+    "ms_per_image": 5.5291,
+    "crop_size": 256
+  },
+  "landmark": {
+    "exp_id": "L5",
+    "classifier": "heatmap",
+    "settings": "epochs=4 batch=16 lr=0.001 loss=L1",
+    "seed": 0,
+    "module": "experiments.face_landmark.deep_learning.l5_heatmap_softargmax",
+    "weights": "experiments/face_landmark/checkpoints/L5_heatmap_s0.pt",
+    "stage": "short run (2,000 train images) - run experiments/full_train.py next",
+    "val_metrics": {
+      "nme_106_%": 6.0154,
+      "nme_eyes_%": 4.4825,
+      "nme_lips_%": 5.7848,
+      "failure_rate": 0.066
+    },
+    "ms_per_image": 4.2767,
+    "crop_size": 160
+  }
+}

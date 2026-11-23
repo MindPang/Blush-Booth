@@ -1,0 +1,22 @@
+# data (copy or point to it with --lapa / --backgrounds)
+LaPa/
+backgrounds/
+tests/fake_data/
+
+# trained models and generated files
+runs/
+experiments/*/checkpoints/
+experiments/face_detection/yolo_data/
+model/detection/yolo_data/
+outputs/
+*.pt
+yolov8n.pt
+
+# except the best weight for each model (see model/best_models.json)
+!model/detection/D4_yolov8n_full.pt
+!model/landmark/L5_heatmap_full.pt
+!model/parser/P5_unet_resnet18_full.pt
+
+__pycache__/
+*.pyc
+.pytest_cache/
