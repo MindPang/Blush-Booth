@@ -11,6 +11,7 @@ camera frame -> face detector (YOLOv8n) -> landmark model (heatmap CNN, 106 poin
 ```
 
 The trained weights are included in this repository, so **you can try the app without training anything**.
+<img width="1710" height="1073" alt="image" src="https://github.com/user-attachments/assets/a209b5e0-4c31-4bcf-b85d-591a5b8f9a89" />
 
 ---
 
