@@ -1,160 +1,224 @@
-# Revised Blush Booth - virtual makeup try-on
+# Blush Booth - virtual makeup try-on
 
-Same app and same UI as the old Blush Booth. What changed is the model part: every model is now chosen by
-a fair experiment (lecture method -> Lab 8 classifiers -> beyond class), all run on the same data, with a
-selection rule fixed before the runs. The winners are trained fully and the app and the browser server
-load them from `model/best_models.json` (made by `full_train.py`). If full training has not been run yet,
-they fall back to the short-run winners in `best_models.json`. Use `--config best_models.json` to force
-the short-run models.
+A real-time virtual makeup app (lips, blush, eyeshadow, eyeliner, lashes, foundation, brows, hair colour and more).
+It runs locally with your webcam or on a photo, either in a browser page or in an OpenCV window.
+Nothing is uploaded; all pictures stay on your computer.
 
-## What changed compared with the old project
+Under the hood three small models work in a chain:
 
-| | Old Blush Booth | Revised |
-|---|---|---|
-| UI (`makeup_app.py`, `ui/`, `facekit/makeup.py`, `looks/`) | - | the same (only the model loading changed: `--config best_models.json` instead of `--det/--lmk/--par`) |
-| Models | 3 CNNs fixed in advance | 15 experiments, winner picked by a rule (`experiments/select_best.py`) |
-| Data code | big cache step + Dataset classes | reads LaPa directly (`experiments/common/data.py`), same crops / scene sizes as before |
-| Pipeline | `facekit/pipeline.py` tied to the 3 CNNs | small pipeline that works with any winner (classical or CNN) |
-| Missing models | crash | the app starts and tells you which step to run |
-| Web (Netlify / ONNX) version | yes | not carried over (only the local app and the browser UI with `ui/server.py`) |
+```
+camera frame -> face detector (YOLOv8n) -> landmark model (heatmap CNN, 106 points) -> face parser (U-Net, 11 regions) -> makeup drawn on the regions
+```
 
-## Setup
+The trained weights are included in this repository, so **you can try the app without training anything**.
 
-```bat
-cd "E:\Revised Blush Booth"
+---
+
+## 1. Try the app (for everyone)
+
+### Download
+```bash
+git clone https://github.com/MindPang/Blush-Booth
+cd Blush-Booth
+```
+(or click **Code -> Download ZIP** on GitHub and unzip it).
+
+### Install
+Python 3.9+ is needed.
+```bash
 pip install -r requirements.txt
 ```
-For a GPU, install the CUDA build of PyTorch first (see pytorch.org). The pretrained models (D4, P5, L6)
-download their weights from the internet the first time they run.
+Tip: use a virtual environment (`python -m venv venv`, then activate it). With an NVIDIA GPU, install the CUDA build
+of PyTorch first (see pytorch.org); the app also runs fine on CPU.
 
-**Data (needed):** LaPa (`train/ val/ test/`, each with `images/ labels/ landmarks/`) and the face-free
-`backgrounds/` (`train/ val/ test/`). Either copy both folders into `E:\Revised Blush Booth\`, or leave them
-where they are: if there is no `LaPa\` / `backgrounds\` in this folder, the scripts automatically use
-`E:\Blush Booth\LaPa` and `E:\Blush Booth\backgrounds`. You can also give the path: `--lapa "D:\data\LaPa"`.
+### Run
 
-**Models:** there are none at the start. Nothing from the old `runs/` is used. You get models by running the
-steps below. The app already works after step 3 (with the short-run models).
+Browser UI (recommended):
+```bash
+python ui/server.py
+```
+This opens http://127.0.0.1:5050. Click **Use camera** or **Choose photo**, pick a look, and adjust the layers.
+Options: `--port 8000`, `--look natural`, `--no-browser`, `--device cpu`, `--camera 1`.
+More about the UI is in [ui/README.md](ui/README.md).
 
-## Run order (Windows)
+OpenCV window (webcam):
+```bash
+python makeup_app.py
+```
 
-Times are rough guesses for one PC with an NVIDIA GPU (CPU only is much slower for the CNNs).
-Measure the first step and scale. `--workers 4` makes the CNN data loading faster (use 0 if it gives errors).
+Make up one photo and save it:
+```bash
+python makeup_app.py --image my_photo.jpg --out result.png
+```
+(`--vertical` puts Before above After for portrait photos; `--list-looks` lists the saved looks.)
 
-| Step | Command | Rough time |
-|---|---|---|
-| 0. check the code (optional) | `python tests\smoke_test.py --offline` | 3 min |
-| 1. subset lists | `python experiments\common\make_subsets.py` | < 1 min |
-| 2a. classical detection | `python experiments\face_detection\classical\d1_template_matching.py` then `...\d2_sliding_window.py` | 3 min + 10-15 min |
-| 2b. classical parser | `python experiments\face_parser\classical\p1_colour_rules.py`, `p2_kmeans.py`, `p3_patch_classifier.py` | 3 + 5 + 10 min |
-| 2c. classical landmarks | `python experiments\face_landmark\classical\l1_mean_shape.py`, `l2_harris.py`, `l3_features_regressor.py` | 2 + 2 + 5 min |
-| 3a. CNNs from scratch | `d3_centernet_scratch.py`, `p4_unet_scratch.py`, `l4_cnn_regression.py`, `l5_heatmap_softargmax.py` (each with `--workers 4`) | 5-15 min each |
-| 3b. pretrained (optional) | `d4_yolov8n.py`, `p5_unet_resnet18.py`, `l6_mobilenetv2.py` | 5-15 min each |
-| 4. pick winners | `python experiments\select_best.py` | seconds |
-| 5. full training | `python experiments\full_train.py --task detection --workers 4` (same for `landmark`, `parser`) | CNN: 20-80 min each, classical: 5-20 min |
-| 6. test once | `python experiments\test_once.py --task detection` (and `landmark`, `parser`, `end2end`) | 2-5 min each |
-| 7. app | `python ui\server.py` or `python makeup_app.py` | - |
+Debug overlays: add `--show-box`, `--show-dots`, `--show-label` to see the detection box, landmarks and parsed regions.
 
-`run_short_experiments.bat` runs steps 1-4 in one go (about 2-3 hours in total on a GPU).
+Check that the models load: `python tests/check_models.py --image my_photo.jpg`
 
-**If time is short:** after step 4 the app already uses the short-run winners; once `full_train.py` has
-written `model/best_models.json` the app switches to the fully trained models by itself. `full_train.py` takes
-`--epochs N` (defaults: detection 20, landmark 20, parser 8). Lower it, e.g. `--epochs 6`, to finish
-in time, and write the number of epochs in the report. Steps 2-3 can run at the same time in two
-windows if the PC has enough memory.
+**Note:** the first run of the browser UI loads fonts from Google Fonts (falls back to a system font offline).
+The pretrained weights needed by the app are already in `model/`; no model download happens at run time.
 
-Multi-seed rule: if `select_best.py` says the top two are within 1 point, rerun those two scripts with
-`--seed 1` and `--seed 2` (same command + `--seed 1`), then run `select_best.py` again (it averages seeds).
+---
 
-Useful options for every experiment script: `--quick` (tiny test run), `--variant NAME` (only one classifier,
-e.g. `--variant RandomForest`), `--seed N`, `--epochs N`, `--batch N`, `--device cpu`, `--lapa PATH`.
+## 2. Where the models come from
 
-## The experiments
+### Data
+[LaPa](https://github.com/JDAI-CV/lapa-dataset) face parsing dataset: 18,168 train / 2,000 val / 2,000 test images,
+each with 11-class parsing labels and 106 landmarks. Face-free **background** images are used as negatives for
+detection (train/val/test). The data is **not** in this repository (too large). Put it next to the code:
 
-All experiments use the same data: train = first 2,000 LaPa train images after shuffling with seed 0
-(list saved in `experiments/common/subsets/`), eval = fixed 500 val images (+500 face-free scenes for
-detection). The test split is only used by `test_once.py`. CNNs: 4 epochs, AdamW lr 1e-3, weight decay
-1e-4, OneCycle schedule, batch 16. Classical: features from the same 2,000 images, k-fold CV on train
-(Lab 8 style, shown in the notes column), then scored on the 500 val images.
+```
+LaPa/{train,val,test}/{images,labels,landmarks}
+backgrounds/{train,val,test}
+```
+or pass `--lapa PATH --backgrounds PATH` to any script (e.g. `--lapa dataset/LaPa --backgrounds dataset/backgrounds`).
 
-Every run adds one row to `results.csv` in its model folder:
-`exp_id, approach, source, classifier, settings, train_images, seed, metric_1..4, train_time_s, ms_per_image, notes`
+### Method: pick every model by a fair experiment
+There are three tasks. For each one we ran the same ladder of methods on the **same data subset** with a selection
+rule written **before** the runs.
 
-| Model | metric_1 | metric_2 | metric_3 | metric_4 |
+| Task | Classical (lecture) | CNN from scratch | Pretrained |
+|---|---|---|---|
+| Detection | D1 template matching (SSD/NCC), D2 sliding window + HSV/LBP/edges + kNN/SVM/RF | D3 CenterNet-style | **D4 YOLOv8n** |
+| Parser (11 classes) | P1 colour rules, P2 K-means (LAB+xy), P3 patch features + RF/kNN/DecisionTree | P4 U-Net | **P5 U-Net + ResNet18 encoder** |
+| Landmarks (106 pts) | L1 mean shape, L2 Harris eye corners, L3 gray+LBP+PCA -> kNN/RF/Ridge | L4 CNN regression, **L5 heatmap + soft-argmax** | L6 MobileNetV2 |
+
+Bold = winner.
+
+**Protocol (all experiments)**
+- Train: first 2,000 LaPa train images after shuffling with seed 0 (lists in `experiments/common/subsets/`).
+- Evaluation: a fixed 500 val images (+500 face-free scenes for detection). The test split is touched only once, at the end.
+- CNNs: 4 epochs, AdamW lr 1e-3, weight decay 1e-4, OneCycle, batch 16. Classical: same images, k-fold CV, then scored on val.
+- Metrics: defined in the [experiment reference](#experiment-reference) below.
+
+**Selection rules (val only, fixed in advance)**
+
+| Task | Rule |
+|---|---|
+| Detection | highest recall with false alarms <= 3% and <= 15 ms/frame |
+| Parser | highest mIoU with lips IoU within 0.02 of the best and <= 30 ms/crop |
+| Landmarks | lowest NME with <= 15 ms/crop |
+
+Ties within 1 point (0.01 recall/mIoU, 0.1 NME-%; set in `TOLERANCE` in `experiments/select_best.py`) go to the faster model; if the top two are that close the two are
+rerun with more seeds. All candidates and the decisions are in [experiments/selection_report.txt](experiments/selection_report.txt).
+
+### Decision (short runs, 2,000 train images, val set)
+
+| Task | Winner | Result | Runner-ups |
+|---|---|---|---|
+| Detection | D4 YOLOv8n | recall 0.954, false alarms 1.8%, 6.6 ms | D3 0.63-0.78 recall; D2 <= 0.36; D1 ~0.10 |
+| Parser | P5 U-Net + ResNet18 | mIoU 0.788, lips IoU 0.724, 5.5 ms | P4 0.370; P3 <= 0.241; P1/P2 ~0.12 |
+| Landmarks | L5 heatmap + soft-argmax | NME 6.02%, failures 6.6%, 4.3 ms | L6 8.82%; L4 11.04%; L3 >= 13.46%; L1 22.7% |
+
+Classical methods are fine for teaching but cannot handle LaPa's variety of pose, hair and lighting; pretrained
+encoders (P5, D4) and heatmap regression (L5) win clearly while staying far under the speed limits.
+
+### Full training of the winners (all 18,168 train images)
+
+The three winners are retrained with the same code (`full_train.py` runs each winner's script with `--full`) on all train images, for more epochs than the 4-epoch short runs (20 / 8 / 20). Only after that is the test split used, once per model (`test_once.py` refuses to test the same weights twice unless `--again` is given).
+
+| Task | Epochs | Val result | **Test result (used once)** |
+|---|---|---|---|
+| Detection D4 | 20 | recall 0.974, false alarms 0.2% | recall 0.972, mean IoU 0.849, false alarms 1.2% |
+| Parser P5 | 8 | mIoU 0.847, lips 0.779 | mIoU 0.851, lips 0.793, hair 0.916, skin 0.946 |
+| Landmarks L5 | 20 | NME 1.95%, failures 0.4% | NME 1.45%, failures 0.45% |
+| End to end | - | - | face found 98.2%, NME 1.41%, mIoU 0.842, about 69 ms per frame |
+
+These weights are the three `.pt` files in `model/`, selected by `model/best_models.json`.
+Test numbers come from `records/evaluation_runs.csv`; training logs are in `model/*/train_log.txt` and `model/training_runs.csv`.
+
+### Experiment reference
+
+Every experiment run appends one row to the `results.csv` of its task (`experiments/face_*/results.csv`) with the columns
+`exp_id, approach, source, classifier, settings, train_images, seed, metric_1..metric_4, train_time_s, ms_per_image, notes`.
+
+| Task | metric_1 | metric_2 | metric_3 | metric_4 |
 |---|---|---|---|---|
-| face_detection | recall (IoU > 0.5 and score >= thr) | mean IoU of the best box | false-alarm rate on face-free scenes | - |
-| face_parser | mIoU over 11 classes | lips IoU (upper + lower merged) | hair IoU | skin IoU |
-| face_landmark | NME 106 points (% of eye distance) | NME eye points | NME lip points | failure rate (NME > 10%) |
+| Detection | recall (IoU > 0.5 and score >= threshold) | mean IoU of the best box | false-alarm rate on face-free scenes | - |
+| Parser | mIoU over 11 classes | lips IoU (upper + lower lip merged) | hair IoU | skin IoU |
+| Landmarks | NME, 106 points (% of eye distance) | NME eye points | NME lip points | failure rate (NME > 10%) |
 
-(L2 Harris only finds 4 eye corners, so its metric_2 is the NME of those 4 corners and metric_1 is empty.)
+Details worth knowing:
+- L2 (Harris) only finds the 4 eye corners, so its `metric_1` is empty and `metric_2` is the NME of those 4 corners.
+- P1 uses a* + Otsu for lips, a YCrCb box for skin and dark pixels for hair, with and without open/close clean-up; P2 runs K-means on LAB + (x, y) with K = 6 / 8 / 11.
+- Run all experiments on the same PC: the millisecond limits in the selection rules depend on the machine.
 
-| ID | Detection | ID | Parser | ID | Landmarks |
-|---|---|---|---|---|---|
-| D1 | template matching, average face, 5 scales, SSD vs NCC (lecture, Lab 7) | P1 | colour rules: a* + Otsu (lips), YCrCb (skin), dark pixels (hair), open/close | L1 | mean shape (baseline) |
-| D2 | sliding window + HSV/LBP/edge features + kNN / SVM / Random Forest (Lab 8) | P2 | K-means on LAB + (x, y), K = 6/8/11 | L2 | Harris corners for the 4 eye corners |
-| D3 | old CenterNet-style DetectorNet, from scratch | P3 | 8 x 8 patch features + Random Forest / kNN / Decision Tree (Lab 8) | L3 | gray + LBP -> PCA 50 -> kNN / Random Forest / Ridge |
-| D4 | YOLOv8n pretrained, fine-tuned | P4 | old U-Net, from scratch, CE + Dice | L4 | small CNN, direct regression |
-| | | P5 | U-Net with pretrained ResNet18 encoder | L5 | old LandmarkNet, heatmaps + soft-argmax |
-| | | | | L6 | MobileNetV2 pretrained + regression head |
+---
 
-**Selection rule (val only, fixed before the runs):**
-detection = highest recall with false alarms <= 3% and <= 15 ms/frame;
-parser = highest mIoU with lips IoU within 0.02 of the best and <= 30 ms/crop;
-landmark = lowest NME with <= 15 ms/crop; within 1 point -> the faster one.
-"1 point" = 0.01 for recall / mIoU and 0.1 NME-% for landmarks (set in `TOLERANCE` in `select_best.py`).
-Run all experiments on the same PC, because the ms limits depend on the machine.
-The choice and all candidates are written to `experiments/selection_report.txt`.
+## 3. Reproduce the training
 
-## The pretrained models (for the Q&A)
+Needs LaPa + backgrounds (see above) and a GPU is strongly recommended. Paths use `/`; on Windows `\` also works.
 
-We use them only with retraining on our LaPa data (as the course allows).
+```bash
+# 0. optional code check (tiny fake data, ~3 min)
+python tests/smoke_test.py --offline
 
-**YOLOv8n (D4, detection).** A one-stage detector from Ultralytics, the smallest ("nano") version, about
-3.2 M parameters. Backbone: CSP-Darknet style conv blocks (C2f) that make feature maps at 3 sizes;
-neck: a feature pyramid (FPN + PAN) that mixes the small and big maps; head: anchor-free, for every grid cell
-it predicts a class score ("face" or not) + the box (distances from the cell to the 4 sides). Overlapping boxes are removed with
-NMS. It was pretrained on COCO (80 everyday classes). We fine-tune it with one class "face" on the same
-256-px scenes as D3 for 4 epochs; we keep the box with the highest confidence.
+# 1. fixed training/eval subset lists
+python experiments/common/make_subsets.py
 
-**U-Net with ResNet18 encoder (P5, parser, segmentation_models_pytorch).** Same U shape as our P4: an
-encoder that makes the image smaller and the features deeper, and a decoder that makes it big again, with
-skip connections that copy the encoder maps to the decoder so the borders stay sharp. The difference: the
-encoder is ResNet18 (residual blocks, 11 M parameters) pretrained on ImageNet, so it already knows edges and
-textures. The decoder and the 11-class output are new and trained on LaPa with the same CE + Dice loss.
+# 2. classical experiments
+python experiments/face_detection/classical/d1_template_matching.py
+python experiments/face_detection/classical/d2_sliding_window.py
+python experiments/face_parser/classical/p1_colour_rules.py
+python experiments/face_parser/classical/p2_kmeans.py
+python experiments/face_parser/classical/p3_patch_classifier.py
+python experiments/face_landmark/classical/l1_mean_shape.py
+python experiments/face_landmark/classical/l2_harris.py
+python experiments/face_landmark/classical/l3_features_regressor.py
 
-**MobileNetV2 (L6, landmarks, torchvision).** A small CNN made for phones (about 2.2 M parameters without
-the classifier). Its "inverted residual" blocks first widen the channels with a 1x1 conv, then use a cheap
-depthwise 3x3 conv, then narrow again with a 1x1 conv, with a shortcut around the block. We take the
-ImageNet-pretrained feature part, average-pool it to 1280 numbers and add one linear layer that outputs the
-212 numbers (106 x, y). Trained with the same L1 / eye-distance loss as L4 and L5.
+# 3. CNNs from scratch and pretrained (add --workers 4 for faster loading)
+python experiments/face_detection/deep_learning/d3_centernet_scratch.py --workers 4
+python experiments/face_detection/deep_learning/d4_yolov8n.py --workers 4
+python experiments/face_parser/deep_learning/p4_unet_scratch.py --workers 4
+python experiments/face_parser/deep_learning/p5_unet_resnet18.py --workers 4
+python experiments/face_landmark/deep_learning/l4_cnn_regression.py --workers 4
+python experiments/face_landmark/deep_learning/l5_heatmap_softargmax.py --workers 4
+python experiments/face_landmark/deep_learning/l6_mobilenetv2.py --workers 4
 
-## How the app uses the winners
+# 4. apply the selection rule (writes root best_models.json + experiments/selection_report.txt)
+python experiments/select_best.py
 
-`model/best_models.json` (fully trained, written by `full_train.py`) or, before full training,
-`best_models.json` (short runs, written by `select_best.py`) says for each part which
-experiment script and which saved file to use. Every experiment script has the same small functions:
-`load_model(path, device)` and `detect(model, frame)` / `predict_points(model, crop)` / `parse_crop(model, crop)`.
-`facekit/pipeline.py` calls them: detector -> landmark crop (160) -> parser crop (256), exactly like before.
-If a model is missing the app still starts and prints e.g. "No trained detector yet ... run ...".
-`python tests\check_models.py --image some_photo.jpg` loads every saved model through the app pipeline.
+# 5. train the winners on all images (writes model/*/ *.pt and model/best_models.json)
+python experiments/full_train.py --task detection --workers 4
+python experiments/full_train.py --task landmark  --workers 4
+python experiments/full_train.py --task parser    --workers 4
 
-## Folder layout
+# 6. evaluate once on the test split
+python experiments/test_once.py --task detection
+python experiments/test_once.py --task landmark
+python experiments/test_once.py --task parser
+python experiments/test_once.py --task end2end
+```
+
+`run_short_experiments.bat` runs steps 1-4 in one go (about 2-3 hours on a GPU, Windows only).
+
+Useful options on every experiment script: `--quick` (tiny test run), `--variant NAME` (one classifier only),
+`--seed N`, `--epochs N`, `--batch N`, `--device cpu`, `--lapa PATH`, `--backgrounds PATH`.
+`full_train.py` defaults to 20 epochs for detection and landmarks and 8 for the parser (`--epochs N` to change).
+
+Pretrained starting weights (YOLOv8n on COCO, ResNet18 and MobileNetV2 on ImageNet) are downloaded automatically the
+first time D4, P5 or L6 are trained; this needs internet and is not needed just to run the app.
+
+---
+
+## 4. Repository layout
 
 ```
 makeup_app.py            OpenCV app (camera or --image photo)
-ui/                      browser UI (server.py + static/)
-facekit/                 makeup.py (makeup drawing), pipeline.py, models.py (DetectorNet, LandmarkNet, UNet),
-                         datasets.py (LaPa reading, scenes, crops), geometry.py, layout.py, losses.py, metrics.py, viz.py
+ui/                      browser UI (server.py, actions.py, static/)
+facekit/                 makeup drawing, pipeline, models (DetectorNet, LandmarkNet, UNet), geometry, losses, metrics
 looks/user_looks.json    saved looks
-best_models.json         made by select_best.py / full_train.py (not there at the start)
-experiments/
-  common/                data.py (subsets, eval sets), features.py, evaluate.py, results.py, cnn.py, make_subsets.py
-  face_detection/        classical/ (d1, d2)  deep_learning/ (d3, d4)  results.csv  checkpoints/
-  face_parser/           classical/ (p1, p2, p3)  deep_learning/ (p4, p5)  results.csv  checkpoints/
-  face_landmark/         classical/ (l1, l2, l3)  deep_learning/ (l4, l5, l6)  results.csv  checkpoints/
-  select_best.py  full_train.py  test_once.py
-runs/<task>/             fully trained winners (made by full_train.py)
-records/                 training_runs.csv, evaluation_runs.csv
-tests/                   smoke_test.py, make_fake_data.py, fake_lapa.py, check_models.py, test_makeup.py
+model/                   trained weights (3 .pt files) + best_models.json (full-training winners)
+best_models.json         short-run winners (written by select_best.py; fallback if model/best_models.json is missing)
+dataset/                 optional: LaPa/ and backgrounds/ may live here (see section 2)
+experiments/             all 15 experiments, select_best.py, full_train.py, test_once.py, selection_report.txt
+records/                 evaluation runs (test results)
+tests/                   smoke test, model check, makeup tests
 ```
 
-Rows marked `QUICK` or `FAKE DATA` in the notes are code tests and are ignored by `select_best.py`.
+The app imports the winning model's code from `experiments/` (named in `model/best_models.json`), so keep that folder.
+If a model file is missing the app still starts and prints which step to run.
+
+## Credits
+LaPa dataset (JD AI Research). YOLOv8 by Ultralytics. U-Net via `segmentation-models-pytorch`. MobileNetV2/ResNet18 from torchvision.
