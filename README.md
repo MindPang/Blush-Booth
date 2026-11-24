@@ -17,6 +17,13 @@ The trained weights are included in this repository, so **you can try the app wi
 
 ## 1. Try the app (for everyone)
 
+### Try it online
+Open **https://blush-booth.netlify.app** in your browser, no install needed. The page downloads the models to your
+browser the first time it loads (this can take a moment), so you need an internet connection for that first visit.
+Allow camera access, or choose a photo.
+
+For the full local version (Python app, saved looks, OpenCV window), follow the steps below.
+
 ### Download
 ```bash
 git clone https://github.com/MindPang/Blush-Booth
@@ -59,6 +66,21 @@ Check that the models load: `python tests/check_models.py --image my_photo.jpg`
 
 **Note:** the first run of the browser UI loads fonts from Google Fonts (falls back to a system font offline).
 The pretrained weights needed by the app are already in `model/`; no model download happens at run time.
+
+---
+
+## 2. Where the models come from
+
+### Data
+[LaPa](https://github.com/JDAI-CV/lapa-dataset) face parsing dataset: 18,168 train / 2,000 val / 2,000 test images,
+each with 11-class parsing labels and 106 landmarks. Face-free **background** images are used as negatives for
+detection (train/val/test). The data is **not** in this repository (too large). Put it next to the code:
+
+```
+LaPa/{train,val,test}/{images,labels,landmarks}
+backgrounds/{train,val,test}
+```
+or pass `--lapa PATH --backgrounds PATH` to any script (e.g. `--lapa dataset/LaPa --backgrounds dataset/backgrounds`).
 
 ---
 
