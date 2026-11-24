@@ -4,14 +4,14 @@ A real-time virtual makeup app (lips, blush, eyeshadow, eyeliner, lashes, founda
 It runs locally with your webcam or on a photo, either in a browser page or in an OpenCV window.
 Nothing is uploaded; all pictures stay on your computer.
 
-Under the hood three small models work in a chain:
+Work flow:
 
 ```
 camera frame -> face detector (YOLOv8n) -> landmark model (heatmap CNN, 106 points) -> face parser (U-Net, 11 regions) -> makeup drawn on the regions
 ```
+<img width="3840" height="2160" alt="Blush_Booth_App_Workflow" src="https://github.com/user-attachments/assets/e8617195-1726-4272-9437-47094ddbdeb2" />
 
 The trained weights are included in this repository, so **you can try the app without training anything**.
-<img width="1710" height="1073" alt="image" src="https://github.com/user-attachments/assets/a209b5e0-4c31-4bcf-b85d-591a5b8f9a89" />
 
 ---
 
@@ -66,21 +66,6 @@ Check that the models load: `python tests/check_models.py --image my_photo.jpg`
 
 **Note:** the first run of the browser UI loads fonts from Google Fonts (falls back to a system font offline).
 The pretrained weights needed by the app are already in `model/`; no model download happens at run time.
-
----
-
-## 2. Where the models come from
-
-### Data
-[LaPa](https://github.com/JDAI-CV/lapa-dataset) face parsing dataset: 18,168 train / 2,000 val / 2,000 test images,
-each with 11-class parsing labels and 106 landmarks. Face-free **background** images are used as negatives for
-detection (train/val/test). The data is **not** in this repository (too large). Put it next to the code:
-
-```
-LaPa/{train,val,test}/{images,labels,landmarks}
-backgrounds/{train,val,test}
-```
-or pass `--lapa PATH --backgrounds PATH` to any script (e.g. `--lapa dataset/LaPa --backgrounds dataset/backgrounds`).
 
 ---
 
